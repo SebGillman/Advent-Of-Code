@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "exports": null,
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2",
+    "undici": "^7.1.0",
+    "undici-types": "^7.1.0"
+  }
+}
