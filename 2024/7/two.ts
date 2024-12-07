@@ -1,5 +1,4 @@
 import * as fs from "fs/promises";
-import test from "node:test";
 
 const file = await fs.readFile("./2024/7/input.txt", { encoding: "utf-8" });
 
