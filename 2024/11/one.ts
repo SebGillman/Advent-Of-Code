@@ -2,45 +2,41 @@ import * as fs from "fs/promises";
 
 const file = await fs.readFile("./2024/11/input.txt", { encoding: "utf-8" });
 
-const stones: number[] = file.split(" ").map((num) => Number(num));
+const stonesArr: number[] = file.split(" ").map((num) => Number(num));
 
-function afterNBlinks(stones: number[], n: number) {
-  for (let i = 0; i < n; i++) {
-    let p = 0;
+const memo = new Map<string, number>();
 
-    while (p < stones.length) {
-      //   console.log(p, stones);
-      const currStone = stones[p];
-      const currStoneString = `${currStone}`;
-      const currStoneLength = currStoneString.length;
+function processStone(stone: number) {
+  const stoneString = `${stone}`;
+  const stoneLength = stoneString.length;
 
-      if (currStone == 0) {
-        stones[p] = 1;
-        p++;
-      } else if (currStoneLength % 2 == 0) {
-        const newStone1 = Number(
-          currStoneString.substring(0, currStoneLength / 2)
-        );
-        const newStone2 = Number(
-          currStoneString.substring(currStoneLength / 2)
-        );
+  if (stone == 0) {
+    return [1];
+  } else if (stoneLength % 2 == 0) {
+    const newStone1 = Number(stoneString.substring(0, stoneLength / 2));
+    const newStone2 = Number(stoneString.substring(stoneLength / 2));
 
-        stones.splice(p, 1, newStone1, newStone2);
-        p += 2;
-      } else {
-        stones[p] = currStone * 2024;
-        p++;
-      }
-    }
-    // console.log(stones);
+    return [newStone1, newStone2];
+  } else {
+    return [stone * 2024];
   }
-  return stones.length;
 }
 
-console.log(afterNBlinks(stones, 25));
+function afterNBlinks(stone: number, n: number): number {
+  if (n == 0) return 1;
+  const key = `${stone}:${n}`;
+  if (memo.has(key)) return memo.get(key)!;
+  const newStones = [...processStone(stone)];
 
-// If the stone is engraved with the number 0, it is replaced by a stone engraved with the number 1.
-// If the stone is engraved with a number that has an even number of digits, it is replaced by two stones.
-//      The left half of the digits are engraved on the new left stone, and the right half of the digits are engraved on the new right stone. (The new numbers don't keep extra leading zeroes: 1000 would become stones 10 and 0.)
-// If none of the other rules apply, the stone is replaced by a new stone;
-//      the old stone's number multiplied by 2024 is engraved on the new stone.
+  let res = 0;
+
+  for (const currStone of newStones) {
+    res += afterNBlinks(currStone, n - 1);
+  }
+  memo.set(key, res);
+  return res;
+}
+
+let res = 0;
+stonesArr.forEach((stone) => (res += afterNBlinks(stone, 25)));
+console.log(res);
