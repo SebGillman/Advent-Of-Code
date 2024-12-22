@@ -46,34 +46,46 @@ const passcodes = passcodeFile.split("\r\n");
 console.log(passcodes);
 console.log(keypadMap);
 
-const resArr: string[] = [];
+const resArr: number[] = [];
 let res = 0;
+const hash = new Map<string, number>();
+const robots = 26;
 
 for (let passcode of passcodes) {
   const num = Number(passcode.match(/[0-9]+/)![0]);
   let i = 0;
   passcode = passcode;
-  const curr = dp(2, passcode);
+  const curr = dp(robots, passcode);
   resArr.push(curr);
-  res += curr.length * num;
-  console.log(passcode, curr, curr?.length);
+  res += curr * num;
 }
 
 console.log(res, resArr);
 
-function dp(level: number, code: string): string {
-  if (level < 0) return code;
+function dp(level: number, code: string): number {
+  if (level == 0) return code.length;
   code = "A" + code;
-  const map = level == 2 ? keypadMap : dirKeypadMap;
+  const map = level === robots ? keypadMap : dirKeypadMap;
 
-  let res = "";
-  let i = 0;
-  while (i < code.length - 1) {
-    const option = map.get(code[i])!.get(code[i + 1])![0];
-    res += option + "A";
-    i++;
+  let res = 0;
+
+  for (let i = 0; i < code.length - 1; i++) {
+    const a = code[i];
+    const b = code[i + 1];
+    const key = `${a},${b},${level}`;
+    if (hash.has(key)) {
+      res += hash.get(key) ?? 0;
+      continue;
+    }
+    const options = map.get(a)?.get(b);
+    const dpResults =
+      options?.map((option: string) => dp(level - 1, option + "A")) ?? [];
+    const dpRes = Math.min(...dpResults);
+
+    res += dpRes;
+    hash.set(key, dpRes);
   }
-  return dp(level - 1, res);
+  return res;
 }
 
 function findShortestPaths(
@@ -117,50 +129,10 @@ function findShortestPaths(
       )
         continue;
       visited.add(keypad[nr][nc]);
-      map
-        .get(keypad[startr][startc])
-        ?.get(keypad[nr][nc])
-        ?.push(moves + symbol);
+      (map.get(keypad[startr][startc])?.get(keypad[nr][nc]) as string[])?.push(
+        moves + symbol
+      );
       queue.unshift([nr, nc, moves + symbol]);
     }
   }
-
-  const symbolWeight: Record<string, number> = {
-    "<": 3,
-    ">": 1,
-    "^": 1,
-    v: 2,
-  };
-
-  [...map.keys()].forEach((key) => {
-    const innerMap = map.get(key)!;
-    [...innerMap.keys()].forEach((key) => {
-      innerMap.get(key)?.sort((a, b) => {
-        let aCrossings = 0;
-        let bCrossings = 0;
-
-        let delta = null;
-
-        let [currA, currB] = [a[0], b[0]];
-        for (let i = 0; i < a.length; i++) {
-          if (a[i] != b[i] && delta == null) {
-            delta = 0 - symbolWeight[a[i]] + symbolWeight[b[i]];
-          }
-          if (a[i] != currA) {
-            currA = a[i];
-            aCrossings++;
-          }
-          if (b[i] != currB) {
-            currB = b[i];
-            bCrossings++;
-          }
-        }
-        if (aCrossings != bCrossings) return aCrossings - bCrossings;
-        return delta ?? 0;
-      });
-    });
-  });
 }
-
-// <vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^
-// v<<A>>^AAv<A<A>>^AAvAA^<A>Av<A>^AA<A>Av<A<A>>^
